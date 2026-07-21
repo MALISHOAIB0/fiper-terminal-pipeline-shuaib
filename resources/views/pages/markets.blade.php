@@ -62,13 +62,15 @@
           <tr data-asset-class="{{ $instrument->asset_class }}" onclick="window.location.href='{{ route('instrument.show', $instrument->symbol) }}'">
             <td><span class="mkt-symbol">{{ $instrument->symbol }}</span></td>
             <td><span data-name-en="{{ $instrument->name }}" data-name-ar="{{ $instrument->name_localized ?? $instrument->name }}">{{ $instrument->name }}</span></td>
-            <td class="num">{{ $q ? number_format($q->price, 2) : '—' }}</td>
-            <td class="num {{ $up ? 'change up' : 'change down' }}">
-              @if($q)
-                {{ $up ? '+' : '' }}{{ number_format($q->change_percent, 2) }}%
-              @else
-                —
-              @endif
+            <td><span class="num">{{ $q ? number_format($q->price, 2) : '—' }}</span></td>
+            <td class="{{ $up ? 'change up' : 'change down' }}">
+              <span class="num">
+                @if($q)
+                  {{ $up ? '+' : '' }}{{ number_format($q->change_percent, 2) }}%
+                @else
+                  —
+                @endif
+              </span>
             </td>
             <td><span class="badge {{ $bias['class'] }}" data-bias-en="{{ $bias['en'] }}" data-bias-ar="{{ $bias['ar'] }}">{{ $bias['en'] }}</span></td>
           </tr>
