@@ -18,7 +18,6 @@
   .price-block{text-align:end;}
   .price-block .price{font-size:26px;font-weight:700;}
   .price-block .change{margin-top:2px;font-size:13.5px;font-weight:700;}
-  .change.up{color:var(--bull);} .change.down{color:var(--bear);}
   .price-block .updated{margin-top:4px;font-size:11.5px;color:var(--text-faint);}
   .main-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
   @media (max-width:860px){.main-grid{grid-template-columns:1fr;}}

@@ -37,6 +37,7 @@
   .badge-bull{background:var(--bull-soft);color:var(--bull);}
   .badge-bear{background:var(--bear-soft);color:var(--bear);}
   .badge-neutral{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);}
+  .change.up{color:var(--bull);} .change.down{color:var(--bear);}
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
   .panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
   .panel-title h2{font-size:13px;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);font-weight:700;}
