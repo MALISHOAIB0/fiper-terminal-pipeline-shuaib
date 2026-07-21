@@ -109,7 +109,7 @@ unique(page_slug, field_key)
 
 - `HeatmapController@index` — same query shape as Markets (`with('latestQuote')`) plus
   `PageContent::for('heatmap')`.
-- Instruments grouped into 7 `asset_class` panels (Forex, Crypto, Metals, Stocks, Indices,
+- Instruments grouped into 6 `asset_class` panels (Forex, Crypto, Metals, Stocks, Indices,
   Commodities — Forex rendered as one group despite major/minor split in the seeder, since
   `asset_class` doesn't distinguish them).
 - Each tile: symbol + change%, background color interpolated red→green by `change_percent`
