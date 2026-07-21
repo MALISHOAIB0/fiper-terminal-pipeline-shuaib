@@ -1,12 +1,5 @@
 @php
-    $biasMeta = [
-        'bullish' => ['en' => 'Bullish', 'ar' => 'صعودي', 'class' => 'badge-bull'],
-        'lean_bullish' => ['en' => 'Lean Bullish', 'ar' => 'ميل صعودي حذر', 'class' => 'badge-bull'],
-        'neutral' => ['en' => 'Neutral', 'ar' => 'محايد', 'class' => 'badge-neutral'],
-        'lean_bearish' => ['en' => 'Lean Bearish', 'ar' => 'ميل هبوطي حذر', 'class' => 'badge-bear'],
-        'bearish' => ['en' => 'Bearish', 'ar' => 'هبوطي', 'class' => 'badge-bear'],
-    ];
-    $bias = $biasMeta[$instrument->ai_bias] ?? $biasMeta['neutral'];
+    $bias = \App\Models\Instrument::biasMeta($instrument->ai_bias);
     $changeUp = $quote && $quote->change >= 0;
 @endphp
 <!DOCTYPE html>
@@ -14,47 +7,14 @@
 <head>
 <meta charset="UTF-8">
 <title>Fiper Terminal — {{ $instrument->symbol }}</title>
+@include('layouts.app-head')
 <style>
-  :root{
-    --bg:#0b0a0a; --surface:#141211; --surface-2:#1c1918; --surface-3:#242020;
-    --border:#2b2624; --border-soft:#1e1a19;
-    --text:#f2eeec; --text-dim:#a89e9a; --text-faint:#6f6663;
-    --accent:#f42821; --accent-dark:#a30100;
-    --bull:#2fbe8f; --bull-soft:rgba(47,190,143,.13);
-    --bear:#f42821; --bear-soft:rgba(244,40,33,.13);
-    --gold:#d9a94d; --gold-soft:rgba(217,169,77,.13);
-    --radius:10px;
-    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;
-    --font-mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;}
-  #app{max-width:1180px;margin:0 auto;padding:0 20px 48px;}
-  a{color:inherit;} button{font-family:inherit;}
-  .num{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;font-family:var(--font-mono);display:inline-block;}
-  .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--border-soft);}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;white-space:nowrap;}
-  .brand .mark{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;}
-  .topbar-actions{display:flex;align-items:center;gap:10px;}
-  .locale-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .locale-toggle button{padding:7px 12px;background:var(--surface);color:var(--text-dim);border:none;cursor:pointer;font-size:12.5px;font-weight:600;}
-  .locale-toggle button.is-active{background:var(--surface-3);color:var(--text);}
-  .live-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);}
-  .pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--bull);animation:pulse 2s infinite;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,190,143,.45);}70%{box-shadow:0 0 0 7px rgba(47,190,143,0);}100%{box-shadow:0 0 0 0 rgba(47,190,143,0);}}
-  .breadcrumb{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--text-faint);margin:18px 0 6px;}
   .instrument-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 0 20px;border-bottom:1px solid var(--border-soft);margin-bottom:22px;}
   .instrument-id{display:flex;align-items:center;gap:14px;}
   .instrument-icon{width:44px;height:44px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:var(--gold);}
   .instrument-titles h1{margin:0;font-size:19px;font-weight:700;display:flex;align-items:center;gap:10px;}
   .instrument-titles .symbol{direction:ltr;unicode-bidi:isolate;font-family:var(--font-mono);font-size:12.5px;color:var(--text-dim);font-weight:600;background:var(--surface-2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;}
   .instrument-meta{margin-top:4px;font-size:12.5px;color:var(--text-dim);display:flex;gap:10px;flex-wrap:wrap;}
-  .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:100px;font-size:11.5px;font-weight:700;}
-  .badge-gold{background:var(--gold-soft);color:var(--gold);}
-  .badge-bull{background:var(--bull-soft);color:var(--bull);}
-  .badge-bear{background:var(--bear-soft);color:var(--bear);}
-  .badge-neutral{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);}
   .price-block{text-align:end;}
   .price-block .price{font-size:26px;font-weight:700;}
   .price-block .change{margin-top:2px;font-size:13.5px;font-weight:700;}
@@ -62,9 +22,6 @@
   .price-block .updated{margin-top:4px;font-size:11.5px;color:var(--text-faint);}
   .main-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;}
   @media (max-width:860px){.main-grid{grid-template-columns:1fr;}}
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
-  .panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .panel-title h2{font-size:13px;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);font-weight:700;}
   .period-tabs{display:flex;gap:4px;}
   .period-tabs button{padding:5px 10px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--text-faint);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-mono);}
   .period-tabs button:hover{color:var(--text-dim);}
@@ -103,28 +60,13 @@
   .news-meta{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-faint);margin-bottom:8px;direction:ltr;unicode-bidi:isolate;}
   .news-headline{font-size:13px;font-weight:600;margin:0;}
   .foot-disclaimer{margin-top:28px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:var(--radius);font-size:11.5px;color:var(--text-faint);text-align:center;}
-  .empty-note{font-size:12px;color:var(--text-faint);font-style:italic;}
   #app[dir="rtl"] .instrument-titles h1{flex-direction:row-reverse;}
-  #app[dir="rtl"] .brand{flex-direction:row-reverse;}
-  #app[dir="rtl"] .locale-toggle{flex-direction:row-reverse;}
 </style>
 </head>
 <body>
 <div id="app" dir="ltr" lang="en">
 
-  <header class="topbar">
-    <div class="brand"><span class="mark">F</span><span data-i18n="brand_name">Fiper Terminal</span></div>
-    <div class="topbar-actions">
-      <div class="live-status">
-        <span class="pulse-dot"></span>
-        <span data-i18n="live_label">LIVE</span>
-      </div>
-      <div class="locale-toggle" role="group" aria-label="Language">
-        <button id="btnEn" class="is-active" type="button">EN</button>
-        <button id="btnAr" type="button">AR</button>
-      </div>
-    </div>
-  </header>
+  @include('layouts.app-topbar')
 
   <div class="breadcrumb">
     <span data-i18n="crumb_markets">Markets</span><span>/</span>
@@ -293,6 +235,7 @@
   var i18n = {
     en: {
       brand_name:"Fiper Terminal", live_label:"LIVE", crumb_markets:"Markets",
+      nav_home:"Home", nav_markets:"Markets", nav_heatmap:"Heatmap",
       badge_sharia:"Sharia Compliant", updated_label:"Updated",
       chart_title:"Price Chart", legend_up:"Close ≥ Open", legend_down:"Close < Open",
       brief_panel_title:"AI Brief", levels_heading:"Key Levels",
@@ -307,6 +250,7 @@
     },
     ar: {
       brand_name:"فايبر تيرمينال", live_label:"مباشر", crumb_markets:"الأسواق",
+      nav_home:"الرئيسية", nav_markets:"الأسواق", nav_heatmap:"الخريطة الحرارية",
       badge_sharia:"متوافق شرعياً", updated_label:"آخر تحديث",
       chart_title:"الرسم البياني للسعر", legend_up:"الإغلاق ≥ الافتتاح", legend_down:"الإغلاق < الافتتاح",
       brief_panel_title:"موجز الذكاء الاصطناعي", levels_heading:"المستويات الرئيسية",
@@ -323,13 +267,7 @@
 
   var currentLang = "en";
 
-  function applyI18n(){
-    var dict = i18n[currentLang];
-    document.querySelectorAll("[data-i18n]").forEach(function(el){
-      var key = el.getAttribute("data-i18n");
-      if(dict[key] !== undefined){ el.textContent = dict[key]; }
-    });
-
+  function onLangChange(){
     var brief = currentLang === "ar" ? briefAr : briefEn;
     var displayName = currentLang === "ar" ? instrumentNameAr : instrumentNameEn;
     document.getElementById("instrumentName").textContent = displayName;
@@ -348,18 +286,7 @@
     }
   }
 
-  function setLang(lang){
-    currentLang = lang;
-    var app = document.getElementById("app");
-    app.setAttribute("lang", lang);
-    app.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
-    document.getElementById("btnEn").classList.toggle("is-active", lang === "en");
-    document.getElementById("btnAr").classList.toggle("is-active", lang === "ar");
-    applyI18n();
-  }
-
-  document.getElementById("btnEn").addEventListener("click", function(){ setLang("en"); });
-  document.getElementById("btnAr").addEventListener("click", function(){ setLang("ar"); });
+  @include('partials.i18n')
 
   /* ---------------- Chart rendering (real data from Blade) ---------------- */
   var svg = document.getElementById("chartSvg");

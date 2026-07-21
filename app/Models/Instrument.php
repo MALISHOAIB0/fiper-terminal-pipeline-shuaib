@@ -42,4 +42,15 @@ class Instrument extends Model
     {
         return $this->belongsToMany(NewsArticle::class);
     }
+
+    public static function biasMeta(?string $bias): array
+    {
+        return match ($bias) {
+            'bullish' => ['en' => 'Bullish', 'ar' => 'صعودي', 'class' => 'badge-bull'],
+            'lean_bullish' => ['en' => 'Lean Bullish', 'ar' => 'ميل صعودي حذر', 'class' => 'badge-bull'],
+            'lean_bearish' => ['en' => 'Lean Bearish', 'ar' => 'ميل هبوطي حذر', 'class' => 'badge-bear'],
+            'bearish' => ['en' => 'Bearish', 'ar' => 'هبوطي', 'class' => 'badge-bear'],
+            default => ['en' => 'Neutral', 'ar' => 'محايد', 'class' => 'badge-neutral'],
+        };
+    }
 }
