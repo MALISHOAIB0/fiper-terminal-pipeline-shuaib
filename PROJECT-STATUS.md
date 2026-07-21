@@ -112,8 +112,11 @@ behavior change** — re-verified with Playwright before any new page was built 
 
 One review cycle on the Markets page caught a real bug: the `.change` up/down color rule
 was missing from the shared CSS, so change% cells rendered without red/green. Fixed by
-moving the `.change` rules into the shared layout (commit `4821180`) — confirmed fixed in
-this task's final pass (red/green colors verified pixel-level on both Markets and Heatmap).
+moving the `.change` rules into the shared layout (commit `4821180`) — re-verified working in
+this task's final pass (Markets change% cells show correct red/green). Heatmap's tile colors
+use a separate inline-styling mechanism (per-tile `rgba()` backgrounds, not the `.change`
+class) and were never affected by this bug — independently confirmed as showing a real mix
+of red and green across all tiles.
 
 **Task 9 final integration pass** (this task) — actually run against the live local stack
 (PostgreSQL, Redis, `php artisan serve --port=8123`, all 81 instruments seeded/quoted/briefed),
