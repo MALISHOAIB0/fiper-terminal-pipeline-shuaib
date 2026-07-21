@@ -1,6 +1,6 @@
 # Fiper Terminal — Pipeline Rebuild — Project Status
 
-**Last updated:** 2026-07-21 (instrument seeding expanded to full 81)
+**Last updated:** 2026-07-22 (Home/Markets/Heatmap pages + Filament CMS, integration-verified)
 **Location:** `/Users/mohammadalishuaib/Developer/fiper-terminal-pipeline`
 
 ## Context
@@ -88,6 +88,63 @@ updating on language switch.
 data — Artifacts run under a CSP that blocks all outbound fetch, so it can never talk to this
 local backend. The Blade page above is the real, working version.
 
+### Home, Markets, Heatmap pages + shared layout + Filament CMS
+
+The instrument page's layout was extracted into shared partials
+(`layouts/app-head.blade.php`, `layouts/app-topbar.blade.php`, `partials/i18n.blade.php`) so
+three new pages could reuse the same head/topbar/i18n-toggle machinery instead of each
+reinventing it. `instrument.blade.php` was refactored onto these partials with **zero
+behavior change** — re-verified with Playwright before any new page was built on top.
+
+- **Home** (`/`) — hero with CMS-driven title/subtitle, CTAs to Markets and Heatmap.
+- **Markets** (`/markets`) — table of all 81 instruments (symbol, name, price, change%, AI
+  bias), asset-class tabs that filter rows client-side, row click → instrument page.
+- **Heatmap** (`/heatmap`) — all 81 instruments grouped into 6 asset-class panels, tile
+  background color driven by `change_percent` sign/magnitude (capped ±3%, intensity scaled),
+  tile click → instrument page.
+- **CMS**: new `page_contents` table (`page_slug`, `field_key`, `value_en`, `value_ar`) +
+  `PageContent` model, seeded with 6 rows (hero copy for Home, title/subtitle for
+  Markets and Heatmap). A Filament admin panel at `/admin` (`PageContentResource`) lets
+  these EN/AR strings be edited without a deploy — `/admin` correctly redirects
+  (302) to the login page when unauthenticated.
+- **`Instrument::latestQuote()`** relation added so Markets/Heatmap can pull each
+  instrument's most recent quote without a manual query per row.
+
+One review cycle on the Markets page caught a real bug: the `.change` up/down color rule
+was missing from the shared CSS, so change% cells rendered without red/green. Fixed by
+moving the `.change` rules into the shared layout (commit `4821180`) — confirmed fixed in
+this task's final pass (red/green colors verified pixel-level on both Markets and Heatmap).
+
+**Task 9 final integration pass** (this task) — actually run against the live local stack
+(PostgreSQL, Redis, `php artisan serve --port=8123`, all 81 instruments seeded/quoted/briefed),
+not just re-reading prior task reports:
+
+- **Routes:** `/`, `/markets`, `/heatmap`, `/instrument/2222.SR`, `/instrument/AAPL` all
+  return `200`; `/admin` returns `302` (redirect to login, unauthenticated) — no `500`s.
+- **Home:** EN hero renders CMS copy ("Markets, decoded."); AR toggle switches to the CMS
+  Arabic string ("الأسواق، بوضوح."), `#app` flips to `dir="rtl" lang="ar"`; "Browse Markets"
+  → `/markets`, "View Heatmap" → `/heatmap`; zero console errors on any step.
+- **Markets:** 81 rows in the "All" view; each asset-class tab shows exactly the seeded
+  count and nothing else (Forex 15, Crypto 12, Metals 4, Stocks 25, Indices 15,
+  Commodities 10 — checked both by tag match and by total visible-row count); "All" restores
+  81. AR toggle switches instrument names and bias badges to Arabic text, flips RTL, and
+  `.num` cells stay `direction: ltr` (checked via computed style, not just visual). Clicking
+  a row (BRENT) navigated to `/instrument/BRENT`. Zero console errors.
+- **Heatmap:** exactly 6 group panels, with tile counts matching the same per-class seed
+  counts as Markets (81 total). Tile background colors sampled programmatically: 38 distinct
+  RGBA values across 81 tiles, a real mix of red (`rgba(244,40,33,…)`) and green
+  (`rgba(47,190,143,…)`) — not uniformly gray. AR toggle translates group headings (e.g.
+  "Forex" → "فوركس") and flips RTL. Clicking a tile (AUDCAD) navigated to
+  `/instrument/AUDCAD`. Zero console errors.
+- **Nav consistency:** checked the topbar's 3 links (Home/Markets/Heatmap) on all 4 page
+  types. Home/Markets/Heatmap each show exactly one `.is-active` link matching the current
+  page; the instrument page shows zero `.is-active` links (it isn't one of the 3 nav
+  destinations, so nothing should highlight — expected, not a bug). Cross-navigation between
+  all page pairs (6 link clicks) landed on the correct URL every time.
+
+No functional bugs found in this pass — the feature (Home/Markets/Heatmap/CMS) is
+integration-verified as a whole, not just task-by-task.
+
 ### Monitoring tools added
 - **Laravel Horizon** (`/horizon`) — real-time queue dashboard, confirmed actually processing
   dispatched jobs in the background (no more manual `queue:work --once`)
@@ -142,10 +199,15 @@ directory to pick them up.
 - News is English-only even in Arabic mode (stub has no AR headlines)
 - Kronos and OpenBB are not actually wired to real services — interfaces/config only
 - No ToS, no anti-scraping middleware, no rate limiting — same gaps as the original documented handover
-- Only the instrument detail page exists — no home/markets/heatmap/setups pages yet
+- Home/Markets/Heatmap pages now exist alongside the instrument detail page, but there is
+  still no Setups page
+- The `/admin` (Filament) admin account (`admin@fiperterminal.test`) is a one-off created
+  via `make:filament-user` during Task 8 with a password only recorded in that session's
+  terminal — no password reset flow, no additional users, no roles/permissions
 
 ## Suggested next steps
 
 1. Start a fresh session in this project directory to pick up the OpenBB MCP tools
 2. Decide: real API keys now (Anthropic/TwelveData/Marketaux) vs. keep building more pages on stubs
-3. Build remaining pages (home, markets, heatmap) reusing the same Blade/i18n pattern
+3. Build a Setups page reusing the same Blade/i18n/CMS pattern established by Home/Markets/Heatmap
+4. Give the Filament admin panel a real user-management story (reset flow, more than one account)
