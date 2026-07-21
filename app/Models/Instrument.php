@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Instrument extends Model
 {
@@ -31,6 +32,11 @@ class Instrument extends Model
     public function quoteSnapshots(): HasMany
     {
         return $this->hasMany(QuoteSnapshot::class);
+    }
+
+    public function latestQuote(): HasOne
+    {
+        return $this->hasOne(QuoteSnapshot::class)->latestOfMany('quoted_at');
     }
 
     public function setups(): HasMany
