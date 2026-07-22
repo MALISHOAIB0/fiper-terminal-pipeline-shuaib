@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Contracts\AiBriefProvider;
 use App\Contracts\PriceForecastProvider;
+use App\Events\BriefGenerated;
 use App\Models\Instrument;
 use App\Services\TechnicalIndicatorsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -94,6 +95,15 @@ class GenerateInstrumentBrief implements ShouldQueue
             'ai_bias' => $brief['bias'],
             'analytics_refreshed_at' => now(),
         ]);
+
+        BriefGenerated::dispatch(
+            $instrument->symbol,
+            $modelTier,
+            $brief['en'],
+            $brief['ar'],
+            $brief['bias'],
+            now()->toIso8601String(),
+        );
     }
 
     public function failed(Throwable $exception): void
