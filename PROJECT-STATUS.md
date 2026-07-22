@@ -158,6 +158,7 @@ integration-verified as a whole, not just task-by-task.
 ```
 php artisan serve --port=8123    # http://127.0.0.1:8123
 php artisan horizon              # background queue worker + /horizon dashboard
+php artisan reverb:start          # WebSocket server for live quotes/news/briefs push
 brew services: postgresql@16, redis
 ```
 
@@ -168,6 +169,7 @@ brew services start postgresql@16
 brew services start redis
 php artisan serve --port=8123 &
 php artisan horizon &
+php artisan reverb:start &
 ```
 
 ## External repos evaluated (research only — see full reasoning in conversation history)
