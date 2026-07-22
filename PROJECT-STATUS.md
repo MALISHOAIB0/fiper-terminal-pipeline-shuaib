@@ -148,6 +148,33 @@ not just re-reading prior task reports:
 No functional bugs found in this pass — the feature (Home/Markets/Heatmap/CMS) is
 integration-verified as a whole, not just task-by-task.
 
+### Live data layer (real-time push via Reverb/Echo)
+
+Spec: `docs/superpowers/specs/2026-07-22-live-data-layer-design.md`.
+Plan: `docs/superpowers/plans/2026-07-22-live-data-layer.md`.
+
+Markets, Heatmap, and Instrument pages now update live — price/change%, related news, and
+the AI brief — as the existing scheduled pipeline (`quotes:refresh`, `news:ingest`,
+`analytics:refresh-briefs`) produces new data, with no page reload. Built on Laravel Reverb
+(self-hosted WebSocket server) + Laravel Echo, using three public broadcast channels
+(`quotes`, `news`, `briefs`) — no per-symbol channels, no private/authenticated channels.
+Broadcasting is purely additive: each pipeline command/job dispatches its broadcast event
+only after its normal DB write succeeds, and confirmed (with Reverb stopped) that
+`quotes:refresh` still completes and updates the database normally — broadcasting failures
+never block or re-run the underlying pipeline.
+
+A real bug was found only through live browser verification (not caught by 3 rounds of
+static/diff-based review): `@vite()`'s module script (which sets `window.Echo`) is deferred
+per the HTML spec, so it executes *after* each page's own inline classic `<script>` — every
+page's `if (window.Echo) {...}` listener-registration check was silently false on load, and
+no live updates ever fired. Fixed by wrapping each page's listener-registration block in a
+`DOMContentLoaded` listener; re-verified live afterward (fresh page loads on all three pages
+auto-subscribe to their channels, real DOM updates confirmed from live `quotes:refresh` runs,
+zero console errors, 6/6 automated tests passing).
+
+`php artisan reverb:start` is now a required local process alongside `serve`/`horizon` (see
+below).
+
 ### Monitoring tools added
 - **Laravel Horizon** (`/horizon`) — real-time queue dashboard, confirmed actually processing
   dispatched jobs in the background (no more manual `queue:work --once`)
