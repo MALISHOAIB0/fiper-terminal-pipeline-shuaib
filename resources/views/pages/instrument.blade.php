@@ -94,9 +94,9 @@
     </div>
     <div class="price-block">
       @if($quote)
-        <div class="price num">{{ number_format($quote->price, 2) }}</div>
-        <div class="change {{ $changeUp ? 'up' : 'down' }} num">{{ $changeUp ? '+' : '' }}{{ number_format($quote->change, 2) }} ({{ $changeUp ? '+' : '' }}{{ number_format($quote->change_percent, 2) }}%)</div>
-        <div class="updated"><span data-i18n="updated_label">Updated</span> {{ $quote->quoted_at->diffForHumans() }}</div>
+        <div class="price num" id="instrumentPrice">{{ number_format($quote->price, 2) }}</div>
+        <div class="change {{ $changeUp ? 'up' : 'down' }} num" id="instrumentChange">{{ $changeUp ? '+' : '' }}{{ number_format($quote->change, 2) }} ({{ $changeUp ? '+' : '' }}{{ number_format($quote->change_percent, 2) }}%)</div>
+        <div class="updated"><span data-i18n="updated_label">Updated</span> <span id="instrumentUpdatedTime">{{ $quote->quoted_at->diffForHumans() }}</span></div>
       @else
         <p class="empty-note">No quote yet — run quotes:refresh.</p>
       @endif
@@ -200,19 +200,17 @@
     </section>
   @endif
 
-  @if($news->isNotEmpty())
-    <section class="news-section">
-      <div class="panel-title" style="margin-bottom:12px;"><h2 data-i18n="news_title">Related News</h2></div>
-      <div class="news-grid">
-        @foreach($news as $article)
-          <div class="news-card">
-            <div class="news-meta"><span>{{ $article->source }}</span><span>{{ $article->published_at->diffForHumans() }}</span></div>
-            <p class="news-headline">{{ $article->title }}</p>
-          </div>
-        @endforeach
-      </div>
-    </section>
-  @endif
+  <section class="news-section" id="newsSection" style="{{ $news->isEmpty() ? 'display:none;' : '' }}">
+    <div class="panel-title" style="margin-bottom:12px;"><h2 data-i18n="news_title">Related News</h2></div>
+    <div class="news-grid" id="newsGrid">
+      @foreach($news as $article)
+        <div class="news-card">
+          <div class="news-meta"><span>{{ $article->source }}</span><span>{{ $article->published_at->diffForHumans() }}</span></div>
+          <p class="news-headline">{{ $article->title }}</p>
+        </div>
+      @endforeach
+    </div>
+  </section>
 
   <footer class="foot-disclaimer" data-i18n="footer_disclaimer">
     All analysis on this page is AI-generated and is provided for informational purposes only. It does not constitute investment advice. The Sharia compliance badge is a research tool based on published Islamic finance principles and is not a religious ruling — consult a qualified scholar for guidance.
@@ -378,6 +376,50 @@
   });
 
   renderChart(fullOhlc.slice(Math.max(0, fullOhlc.length - 30)));
+
+  var mySymbol = @json($instrument->symbol);
+
+  if (window.Echo) {
+    window.Echo.channel("quotes").listen(".quote.updated", function (e) {
+      if (e.symbol !== mySymbol) return;
+      var up = e.change_percent >= 0;
+      var priceEl = document.getElementById("instrumentPrice");
+      var changeEl = document.getElementById("instrumentChange");
+      var updatedEl = document.getElementById("instrumentUpdatedTime");
+      if (priceEl) priceEl.textContent = Number(e.price).toFixed(2);
+      if (changeEl) {
+        changeEl.className = "change num " + (up ? "up" : "down");
+        changeEl.textContent = (up ? "+" : "") + Number(e.change).toFixed(2) +
+          " (" + (up ? "+" : "") + Number(e.change_percent).toFixed(2) + "%)";
+      }
+      if (updatedEl) updatedEl.textContent = "just now";
+    });
+
+    window.Echo.channel("news").listen(".news.article-ingested", function (e) {
+      if (e.instrument_symbols.indexOf(mySymbol) === -1) return;
+      var section = document.getElementById("newsSection");
+      var grid = document.getElementById("newsGrid");
+      section.style.display = "";
+      var card = document.createElement("div");
+      card.className = "news-card";
+      card.innerHTML =
+        '<div class="news-meta"><span>' + e.source + "</span><span>just now</span></div>" +
+        '<p class="news-headline">' + e.headline + "</p>";
+      grid.insertBefore(card, grid.firstChild);
+    });
+
+    window.Echo.channel("briefs").listen(".brief.generated", function (e) {
+      if (e.symbol !== mySymbol) return;
+      briefEn = e.brief_en;
+      briefAr = e.brief_ar;
+      biasEnLabel = e.bias_label_en;
+      biasArLabel = e.bias_label_ar;
+      var badge = document.getElementById("biasBadge");
+      if (badge) badge.className = "badge " + e.bias_class;
+      onLangChange();
+    });
+  }
+
   applyI18n();
 })();
 </script>
