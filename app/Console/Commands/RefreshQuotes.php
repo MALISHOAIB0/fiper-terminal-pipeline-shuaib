@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Contracts\MarketDataProvider;
+use App\Events\QuoteUpdated;
 use App\Models\Instrument;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -19,13 +20,21 @@ class RefreshQuotes extends Command
         foreach ($instruments as $instrument) {
             $quote = $provider->fetchQuote($instrument->symbol);
 
-            $instrument->quoteSnapshots()->create([
+            $snapshot = $instrument->quoteSnapshots()->create([
                 'quoted_at' => $quote['quoted_at'],
                 'price' => $quote['price'],
                 'change' => $quote['change'],
                 'change_percent' => $quote['change_percent'],
                 'volume' => $quote['volume'],
             ]);
+
+            QuoteUpdated::dispatch(
+                $instrument->symbol,
+                (float) $snapshot->price,
+                (float) $snapshot->change,
+                (float) $snapshot->change_percent,
+                $snapshot->quoted_at->toIso8601String(),
+            );
         }
 
         $this->line("Refreshed quotes for {$instruments->count()} instrument(s).");
