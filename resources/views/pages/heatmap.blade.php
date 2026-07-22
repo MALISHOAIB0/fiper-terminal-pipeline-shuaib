@@ -50,7 +50,7 @@
             $intensity = round(abs($capped) / 3, 2);
             $tileColor = $pct >= 0 ? "rgba(47,190,143,{$intensity})" : "rgba(244,40,33,{$intensity})";
           @endphp
-          <a href="{{ route('instrument.show', $instrument->symbol) }}" class="heatmap-tile" style="background:{{ $tileColor }};">
+          <a href="{{ route('instrument.show', $instrument->symbol) }}" class="heatmap-tile" data-symbol="{{ $instrument->symbol }}" style="background:{{ $tileColor }};">
             <div class="tile-symbol">{{ $instrument->symbol }}</div>
             <div class="tile-change num">{{ $q ? ($pct >= 0 ? '+' : '').number_format($pct, 2).'%' : '—' }}</div>
           </a>
@@ -89,6 +89,21 @@
   }
 
   @include('partials.i18n')
+
+  if (window.Echo) {
+    window.Echo.channel("quotes").listen(".quote.updated", function (e) {
+      var tile = document.querySelector('.heatmap-tile[data-symbol="' + e.symbol + '"]');
+      if (!tile) return;
+      var pct = e.change_percent;
+      var capped = Math.max(-3, Math.min(3, pct));
+      var intensity = Math.round((Math.abs(capped) / 3) * 100) / 100;
+      tile.style.background = pct >= 0
+        ? "rgba(47,190,143," + intensity + ")"
+        : "rgba(244,40,33," + intensity + ")";
+      var changeEl = tile.querySelector(".tile-change");
+      changeEl.textContent = (pct >= 0 ? "+" : "") + Number(pct).toFixed(2) + "%";
+    });
+  }
 
   applyI18n();
 })();
