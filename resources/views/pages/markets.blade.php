@@ -59,12 +59,12 @@
             $up = $q && $q->change >= 0;
             $bias = \App\Models\Instrument::biasMeta($instrument->ai_bias);
           @endphp
-          <tr data-asset-class="{{ $instrument->asset_class }}" onclick="window.location.href='{{ route('instrument.show', $instrument->symbol) }}'">
+          <tr data-asset-class="{{ $instrument->asset_class }}" data-symbol="{{ $instrument->symbol }}" onclick="window.location.href='{{ route('instrument.show', $instrument->symbol) }}'">
             <td><span class="mkt-symbol">{{ $instrument->symbol }}</span></td>
             <td><span data-name-en="{{ $instrument->name }}" data-name-ar="{{ $instrument->name_localized ?? $instrument->name }}">{{ $instrument->name }}</span></td>
-            <td><span class="num">{{ $q ? number_format($q->price, 2) : '—' }}</span></td>
-            <td class="{{ $up ? 'change up' : 'change down' }}">
-              <span class="num">
+            <td><span class="num mkt-price">{{ $q ? number_format($q->price, 2) : '—' }}</span></td>
+            <td class="mkt-change-cell {{ $up ? 'change up' : 'change down' }}">
+              <span class="num mkt-change-value">
                 @if($q)
                   {{ $up ? '+' : '' }}{{ number_format($q->change_percent, 2) }}%
                 @else
@@ -132,6 +132,21 @@
       });
     });
   });
+
+  if (window.Echo) {
+    window.Echo.channel("quotes").listen(".quote.updated", function (e) {
+      var row = document.querySelector('tr[data-symbol="' + e.symbol + '"]');
+      if (!row) return;
+      var priceEl = row.querySelector(".mkt-price");
+      var changeCell = row.querySelector(".mkt-change-cell");
+      var changeVal = row.querySelector(".mkt-change-value");
+      var up = e.change_percent >= 0;
+      priceEl.textContent = Number(e.price).toFixed(2);
+      changeCell.classList.toggle("up", up);
+      changeCell.classList.toggle("down", !up);
+      changeVal.textContent = (up ? "+" : "") + Number(e.change_percent).toFixed(2) + "%";
+    });
+  }
 
   applyI18n();
 })();
