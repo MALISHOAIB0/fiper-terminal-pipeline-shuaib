@@ -379,46 +379,48 @@
 
   var mySymbol = @json($instrument->symbol);
 
-  if (window.Echo) {
-    window.Echo.channel("quotes").listen(".quote.updated", function (e) {
-      if (e.symbol !== mySymbol) return;
-      var up = e.change_percent >= 0;
-      var priceEl = document.getElementById("instrumentPrice");
-      var changeEl = document.getElementById("instrumentChange");
-      var updatedEl = document.getElementById("instrumentUpdatedTime");
-      if (priceEl) priceEl.textContent = Number(e.price).toFixed(2);
-      if (changeEl) {
-        changeEl.className = "change num " + (up ? "up" : "down");
-        changeEl.textContent = (up ? "+" : "") + Number(e.change).toFixed(2) +
-          " (" + (up ? "+" : "") + Number(e.change_percent).toFixed(2) + "%)";
-      }
-      if (updatedEl) updatedEl.textContent = "just now";
-    });
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.Echo) {
+      window.Echo.channel("quotes").listen(".quote.updated", function (e) {
+        if (e.symbol !== mySymbol) return;
+        var up = e.change_percent >= 0;
+        var priceEl = document.getElementById("instrumentPrice");
+        var changeEl = document.getElementById("instrumentChange");
+        var updatedEl = document.getElementById("instrumentUpdatedTime");
+        if (priceEl) priceEl.textContent = Number(e.price).toFixed(2);
+        if (changeEl) {
+          changeEl.className = "change num " + (up ? "up" : "down");
+          changeEl.textContent = (up ? "+" : "") + Number(e.change).toFixed(2) +
+            " (" + (up ? "+" : "") + Number(e.change_percent).toFixed(2) + "%)";
+        }
+        if (updatedEl) updatedEl.textContent = "just now";
+      });
 
-    window.Echo.channel("news").listen(".news.article-ingested", function (e) {
-      if (e.instrument_symbols.indexOf(mySymbol) === -1) return;
-      var section = document.getElementById("newsSection");
-      var grid = document.getElementById("newsGrid");
-      section.style.display = "";
-      var card = document.createElement("div");
-      card.className = "news-card";
-      card.innerHTML =
-        '<div class="news-meta"><span>' + e.source + "</span><span>just now</span></div>" +
-        '<p class="news-headline">' + e.headline + "</p>";
-      grid.insertBefore(card, grid.firstChild);
-    });
+      window.Echo.channel("news").listen(".news.article-ingested", function (e) {
+        if (e.instrument_symbols.indexOf(mySymbol) === -1) return;
+        var section = document.getElementById("newsSection");
+        var grid = document.getElementById("newsGrid");
+        section.style.display = "";
+        var card = document.createElement("div");
+        card.className = "news-card";
+        card.innerHTML =
+          '<div class="news-meta"><span>' + e.source + "</span><span>just now</span></div>" +
+          '<p class="news-headline">' + e.headline + "</p>";
+        grid.insertBefore(card, grid.firstChild);
+      });
 
-    window.Echo.channel("briefs").listen(".brief.generated", function (e) {
-      if (e.symbol !== mySymbol) return;
-      briefEn = e.brief_en;
-      briefAr = e.brief_ar;
-      biasEnLabel = e.bias_label_en;
-      biasArLabel = e.bias_label_ar;
-      var badge = document.getElementById("biasBadge");
-      if (badge) badge.className = "badge " + e.bias_class;
-      onLangChange();
-    });
-  }
+      window.Echo.channel("briefs").listen(".brief.generated", function (e) {
+        if (e.symbol !== mySymbol) return;
+        briefEn = e.brief_en;
+        briefAr = e.brief_ar;
+        biasEnLabel = e.bias_label_en;
+        biasArLabel = e.bias_label_ar;
+        var badge = document.getElementById("biasBadge");
+        if (badge) badge.className = "badge " + e.bias_class;
+        onLangChange();
+      });
+    }
+  });
 
   applyI18n();
 })();
