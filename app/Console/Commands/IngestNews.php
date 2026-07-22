@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Contracts\NewsProvider;
+use App\Events\NewsArticleIngested;
 use App\Models\Instrument;
 use App\Models\NewsArticle;
 use Illuminate\Console\Attributes\Description;
@@ -35,6 +36,16 @@ class IngestNews extends Command
                     'published_at' => $item['published_at'],
                 ],
             );
+
+            if ($article->wasRecentlyCreated) {
+                NewsArticleIngested::dispatch(
+                    $article->id,
+                    $article->title,
+                    $article->source,
+                    $article->published_at->toIso8601String(),
+                    $item['related_symbols'],
+                );
+            }
 
             // NOTE: Eloquent\Collection::only()/except() match by primary key,
             // not array key — even after keyBy(). whereIn() on the attribute
