@@ -46,3 +46,4 @@
   #app[dir="rtl"] .locale-toggle{flex-direction:row-reverse;}
   #app[dir="rtl"] .main-nav{flex-direction:row-reverse;}
 </style>
+@vite(['resources/js/app.js'])
