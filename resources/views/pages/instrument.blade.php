@@ -403,9 +403,22 @@
         section.style.display = "";
         var card = document.createElement("div");
         card.className = "news-card";
-        card.innerHTML =
-          '<div class="news-meta"><span>' + e.source + "</span><span>just now</span></div>" +
-          '<p class="news-headline">' + e.headline + "</p>";
+
+        var meta = document.createElement("div");
+        meta.className = "news-meta";
+        var sourceSpan = document.createElement("span");
+        sourceSpan.textContent = e.source;
+        var timeSpan = document.createElement("span");
+        timeSpan.textContent = "just now";
+        meta.appendChild(sourceSpan);
+        meta.appendChild(timeSpan);
+
+        var headline = document.createElement("p");
+        headline.className = "news-headline";
+        headline.textContent = e.headline;
+
+        card.appendChild(meta);
+        card.appendChild(headline);
         grid.insertBefore(card, grid.firstChild);
       });
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Events\NewsArticleIngested;
 use App\Models\Instrument;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Event;
@@ -49,5 +50,30 @@ class NewsArticleIngestedBroadcastTest extends TestCase
         Artisan::call('news:ingest');
 
         Event::assertNotDispatched(NewsArticleIngested::class);
+    }
+
+    public function test_news_article_ingested_broadcast_payload_contract(): void
+    {
+        $event = new NewsArticleIngested(
+            42,
+            'Gold rallies on rate-cut bets',
+            'Marketaux',
+            '2026-07-22T12:00:00Z',
+            ['XAUUSD', 'XAGUSD'],
+        );
+
+        $this->assertSame('news.article-ingested', $event->broadcastAs());
+
+        $channel = $event->broadcastOn();
+        $this->assertInstanceOf(Channel::class, $channel);
+        $this->assertSame('news', $channel->name);
+
+        $this->assertSame([
+            'id' => 42,
+            'headline' => 'Gold rallies on rate-cut bets',
+            'source' => 'Marketaux',
+            'published_at' => '2026-07-22T12:00:00Z',
+            'instrument_symbols' => ['XAUUSD', 'XAGUSD'],
+        ], $event->broadcastWith());
     }
 }
